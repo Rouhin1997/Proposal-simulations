@@ -19,6 +19,8 @@ runtime forecast.
 """
 
 from pathlib import Path
+import base64
+import io
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -49,8 +51,21 @@ INFO_COLUMNS = [
     "Image-visible eclipsing",
 ]
 
-population = pd.read_csv(DATA / "population_realizations.csv").set_index("repeat")
-kernel = np.load(DATA / "search_response_kernel.npz")
+population = pd.read_csv(DATA / "population_resource_inputs.csv").set_index("repeat")
+
+# The frozen search-response kernel is stored as base64 text chunks so the
+# repository remains easy to inspect and clone through ordinary GitHub tooling.
+kernel_parts = [
+    "search_response_kernel.part1.b64",
+    "search_response_kernel.part2a.b64",
+    "search_response_kernel.part2b.b64",
+    "search_response_kernel.part2c.b64",
+    "search_response_kernel.part3.b64",
+    "search_response_kernel.part4.b64",
+]
+kernel_b64 = "".join((DATA / p).read_text().strip() for p in kernel_parts)
+kernel_bytes = base64.b64decode(kernel_b64)
+kernel = np.load(io.BytesIO(kernel_bytes))
 
 repeats = kernel["repeats"].astype(int)
 fractions = kernel["fractions"].astype(float)
